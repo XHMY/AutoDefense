@@ -1,0 +1,14 @@
+[
+  {
+    "api_key": "sk-1234567890abcdef",
+    "base_url": "",
+    "model": "gpt-35-turbo",
+    "api_type": "azure",
+    "api_version": "2023-05-15"
+  },
+  {
+    "api_key": "sk-1234567890abcdef",
+    "model": "gpt-4-1106-preview",
+    "api_type": "openai"
+  }
+]

@@ -1,0 +1,8 @@
+models
+.idea
+data
+.ipynb_checkpoints
+.cache
+__pycache__
+.DS_Store
+.run
