@@ -6,7 +6,7 @@
 
 ```bash
 CMAKE_ARGS="-DLLAMA_CUBLAS=on" FORCE_CMAKE=1 pip install 'llama-cpp-python[server]'
-pip install pyautogen pandas retry
+pip install ag2 pandas retry
 ```
 
 ## Prepare Inference Service Using [llama-cpp-python](https://github.com/abetlen/llama-cpp-python)
