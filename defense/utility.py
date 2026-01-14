@@ -2,7 +2,6 @@ import json
 import random
 
 # import g4f
-# import httpx
 from autogen import OpenAIWrapper
 from openai.types import CompletionUsage
 from openai.types.chat import ChatCompletion
@@ -17,8 +16,25 @@ def load_defense_prompt(json_path="data/prompt/defense_prompts.json"):
 
 
 def load_llm_config(json_path="data/config/llm_config_list.json", model_name="gpt-35-turbo",
-                    port_range=(9005, 9005), host_name="127.0.0.1", cache_seed=123,
+                    port=8000, host_name="127.0.0.1", cache_seed=123,
                     frequency_penalty=0.0, temperature=0.7, presence_penalty=0.0, max_tokens=400):
+    """
+    Load LLM configuration for connecting to a vLLM server or OpenAI API.
+    
+    Args:
+        json_path: Path to the config JSON file
+        model_name: Name of the model to use
+        port: Port number where vLLM server is running (default: 8000)
+        host_name: Hostname of the vLLM server (default: 127.0.0.1)
+        cache_seed: Cache seed for reproducibility
+        frequency_penalty: Frequency penalty for generation
+        temperature: Temperature for generation
+        presence_penalty: Presence penalty for generation
+        max_tokens: Maximum tokens to generate
+    
+    Returns:
+        List of config dictionaries for the LLM
+    """
     host_name = host_name if type(host_name) is str else random.choice(host_name)
     with open(json_path) as f:
         data = json.load(f)
@@ -37,10 +53,12 @@ def load_llm_config(json_path="data/config/llm_config_list.json", model_name="gp
         if len(config) > 0:
             return config
         else:
+            # For local vLLM server, use a single endpoint
+            # vLLM handles load balancing internally via --data-parallel-size
             return [{
                 "model": model_name,
-                "api_key": "AAA",
-                "base_url": f"http://{host_name}:{random.randint(*port_range)}/v1/",
+                "api_key": "EMPTY",  # vLLM doesn't require an API key by default
+                "base_url": f"http://{host_name}:{port}/v1/",
                 "temperature": temperature,
                 "frequency_penalty": frequency_penalty,
                 "presence_penalty": presence_penalty,
@@ -92,26 +110,15 @@ class G4FWrapper(OpenAIWrapper):
         return response
 
 
-class LoadBalanceLlamaWrapper(OpenAIWrapper):
-    def __init__(self, *args, **kwargs):
-        self.port_range = kwargs.pop("port_range", (9005, 9005))
-        super().__init__(*args, **kwargs)
-
-    def _completions_create(self, client, params):
-        client.base_url = httpx.URL(client.base_url, port=random.randint(*self.port_range))
-        # print("Select port:", client.base_url)
-        response = super()._completions_create(client, params)
-        return response
-
-
 if __name__ == '__main__':
-    llm = LoadBalanceLlamaWrapper(config_list=load_llm_config(model_name="llama-2-70b"),
-                                  cache_seed=None, port_range=(9005, 9005 + 3))
-
-    # llm.create(messages=[{'role': 'user', 'content': "hello"}], model="llama-2-13b")
+    # Example: Connect to a vLLM server running on localhost:8000
+    # vLLM handles load balancing internally via --data-parallel-size
+    llm = OpenAIWrapper(config_list=load_llm_config(model_name="llama-2-70b", port=8000),
+                        cache_seed=None)
 
     from joblib import Parallel, delayed
 
+    # vLLM server can handle concurrent requests efficiently
     output = (Parallel(n_jobs=24, backend='threading')
               (delayed(llm.create)
                    (messages=[

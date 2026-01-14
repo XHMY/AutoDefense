@@ -50,7 +50,7 @@ def eval_csv_from_yuan():
 
 def eval_defense_strategies(llm_name, output_suffix, ignore_existing=True,
                             chat_file="data/harmful_output/attack_gpt3.5_1106.json",
-                            host_name="127.0.0.1", port_range=(9005, 9005),
+                            host_name="127.0.0.1", port=8000,
                             frequency_penalty=1.3, num_of_threads=6, temperature=0.7, presence_penalty=0.0):
     defense_output_prefix = join(f"data/defense_output/open-llm-defense{output_suffix}", llm_name)
     os.makedirs(defense_output_prefix, exist_ok=True)
@@ -66,14 +66,14 @@ def eval_defense_strategies(llm_name, output_suffix, ignore_existing=True,
             chat_file=chat_file,
             defense_output_name=join(defense_output_prefix, defense_strategy["name"] + ".json"),
             model_name=llm_name,
-            port_range=port_range,
+            port=port,
             host_name=host_name,
             parallel=True, num_of_threads=num_of_threads,
             frequency_penalty=frequency_penalty, presence_penalty=presence_penalty,
             temperature=temperature)
 
 
-def eval_with_open_llms(model_list, chat_file, port_range=(9005, 9005 + 3), ignore_existing=True,
+def eval_with_open_llms(model_list, chat_file, port=8000, ignore_existing=True,
                         host_name="127.0.0.1", output_suffix="", frequency_penalty=1.3,
                         temperature=0.7, eval_safe=True, eval_harm=True, presence_penalty=0.0):
     # "llama-2-13b", "llama-2-7b", "llama-pro-8b", "llama-2-70b", "tinyllama-1.1b", "vicuna-13b-v1.5", "vicuna-33b", "vicuna-7b-v1.5", "vicuna-13b-v1.3.0"
@@ -82,12 +82,12 @@ def eval_with_open_llms(model_list, chat_file, port_range=(9005, 9005 + 3), igno
         if eval_harm:
             eval_defense_strategies(llm_name, output_suffix, ignore_existing=ignore_existing,
                                     chat_file=chat_file,
-                                    host_name=host_name, port_range=port_range, presence_penalty=presence_penalty,
+                                    host_name=host_name, port=port, presence_penalty=presence_penalty,
                                     frequency_penalty=frequency_penalty, temperature=temperature)
         if eval_safe:
             eval_defense_strategies(llm_name, "-safe" + output_suffix, ignore_existing=ignore_existing,
                                     chat_file=chat_file.replace("attack", "safe"),
-                                    host_name=host_name, port_range=port_range, presence_penalty=presence_penalty,
+                                    host_name=host_name, port=port, presence_penalty=presence_penalty,
                                     frequency_penalty=frequency_penalty, temperature=temperature)
 
 
@@ -107,18 +107,27 @@ def eval_with_openai(model_list, chat_file, ignore_existing=True, output_suffix=
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model_list", nargs="*", default=["gpt-3.5-turbo-1106"])
-    parser.add_argument("--chat_file", type=str, default="data/harmful_output/attack_gpt3.5_1106.json")
-    parser.add_argument("--port_start", type=int, default=9005)
-    parser.add_argument("--host_name", nargs="*", default=["127.0.0.1"])
-    parser.add_argument("--num_of_instance", type=int, default=1)
-    parser.add_argument("--output_suffix", type=str, default="")
-    parser.add_argument("--frequency_penalty", type=float, default=0.0)
-    parser.add_argument("--presence_penalty", type=float, default=0.0)
-    parser.add_argument("--temperature", type=float, default=0.7)
-    parser.add_argument("--eval_harm", action="store_true")
-    parser.add_argument("--eval_safe", action="store_true")
+    parser = argparse.ArgumentParser(description="Run defense experiments using vLLM server or OpenAI API")
+    parser.add_argument("--model_list", nargs="*", default=["gpt-3.5-turbo-1106"],
+                        help="List of models to evaluate")
+    parser.add_argument("--chat_file", type=str, default="data/harmful_output/attack_gpt3.5_1106.json",
+                        help="Path to the chat file with harmful outputs")
+    parser.add_argument("--port", type=int, default=8000,
+                        help="Port where vLLM server is running (default: 8000)")
+    parser.add_argument("--host_name", nargs="*", default=["127.0.0.1"],
+                        help="Hostname(s) of the vLLM server")
+    parser.add_argument("--output_suffix", type=str, default="",
+                        help="Suffix for output directory")
+    parser.add_argument("--frequency_penalty", type=float, default=0.0,
+                        help="Frequency penalty for generation")
+    parser.add_argument("--presence_penalty", type=float, default=0.0,
+                        help="Presence penalty for generation")
+    parser.add_argument("--temperature", type=float, default=0.7,
+                        help="Temperature for generation")
+    parser.add_argument("--eval_harm", action="store_true",
+                        help="Evaluate on harmful prompts")
+    parser.add_argument("--eval_safe", action="store_true",
+                        help="Evaluate on safe prompts")
     args = parser.parse_args()
 
     if args.model_list[0].startswith("gpt"):
@@ -126,8 +135,8 @@ if __name__ == '__main__':
                          temperature=args.temperature, chat_file=args.chat_file, eval_safe=args.eval_safe,
                          eval_harm=args.eval_harm, presence_penalty=args.presence_penalty)
     else:
-        port_range = (args.port_start, args.port_start + args.num_of_instance - 1)
-        eval_with_open_llms(model_list=args.model_list, port_range=port_range, ignore_existing=True,
+        # For local models, use vLLM server (handles load balancing internally via --data-parallel-size)
+        eval_with_open_llms(model_list=args.model_list, port=args.port, ignore_existing=True,
                             output_suffix=args.output_suffix, host_name=args.host_name,
                             frequency_penalty=args.frequency_penalty, temperature=args.temperature,
                             chat_file=args.chat_file, eval_safe=args.eval_safe, eval_harm=args.eval_harm,

@@ -531,9 +531,21 @@ def evil_system_prompt(llm, prompts):
 
 def run_single_attack(attack_method, harmful_prompts,
                       model_name="llama-2-70b",
-                      output_dir="data/harmful_output/jailbeaks_exp"):
+                      output_dir="data/harmful_output/jailbeaks_exp",
+                      port=8000, host_name="127.0.0.1"):
+    """
+    Run a single attack method on harmful prompts.
+    
+    Args:
+        attack_method: Dictionary containing attack name and function
+        harmful_prompts: Dictionary of harmful prompts
+        model_name: Name of the model to attack
+        output_dir: Directory to save output
+        port: Port where vLLM server is running (default: 8000)
+        host_name: Hostname of the vLLM server
+    """
     llm = OpenAIWrapper(config_list=load_llm_config(model_name=model_name, frequency_penalty=0.0, temperature=1,
-                                                    port_range=(9005, 9006), host_name="dgxh-1"))
+                                                    port=port, host_name=host_name))
     print(f"Start attack method: {attack_method['name']}")
     response = attack_method['results'] = attack_method['func'](llm, harmful_prompts)
     print(f"Finished attack method: {attack_method['name']}")

@@ -61,9 +61,28 @@ def evaluate_explicit_detector(detector, log_file, attack_output_file="data/harm
 
 def evaluate_defense_with_response(task_agency, defense_agency, defense_output_name,
                                    chat_file="data/harmful_output/attack_gpt3.5_1106.json",
-                                   model_name="gpt-35-turbo", port_range=(9005, 9005), parallel=False,
+                                   model_name="gpt-35-turbo", port=8000, parallel=False,
                                    host_name="127.0.0.1", num_of_repetition=5, frequency_penalty=1.3,
                                    num_of_threads=6, temperature=0.7, cache_seed=123, presence_penalty=0.0):
+    """
+    Evaluate defense strategies against harmful responses.
+    
+    Args:
+        task_agency: The task agency class to use for defense
+        defense_agency: The defense agency class to use
+        defense_output_name: Path to save the defense output
+        chat_file: Path to the chat file with harmful outputs
+        model_name: Name of the model to use
+        port: Port where vLLM server is running (default: 8000)
+        parallel: Whether to run in parallel
+        host_name: Hostname of the vLLM server
+        num_of_repetition: Number of repetitions for evaluation
+        frequency_penalty: Frequency penalty for generation
+        num_of_threads: Number of threads for parallel execution
+        temperature: Temperature for generation
+        cache_seed: Cache seed for reproducibility
+        presence_penalty: Presence penalty for generation
+    """
     harmful_response = []
     if os.path.exists(chat_file):
         ignore_num_of_rep = False
@@ -88,7 +107,7 @@ def evaluate_defense_with_response(task_agency, defense_agency, defense_output_n
     if parallel:
         @retry(openai.RateLimitError, tries=20, delay=10, backoff=20)
         def f(k, v, cache_seed, frequency_penalty=0.0, presence_penalty=0.0):
-            llm_config = load_llm_config(model_name=model_name, port_range=port_range,
+            llm_config = load_llm_config(model_name=model_name, port=port,
                                          host_name=host_name, cache_seed=cache_seed,
                                          frequency_penalty=frequency_penalty, temperature=temperature,
                                          presence_penalty=presence_penalty)
@@ -96,16 +115,15 @@ def evaluate_defense_with_response(task_agency, defense_agency, defense_output_n
                 config_list=llm_config), config_list=llm_config).defense_with_response(response=v)["content"]
             return {"name": k, "raw_response": v, "defense_response": out}
 
-        # defense_output = Parallel(n_jobs=1, backend='sequential')( # for debug
-        defense_output = Parallel(n_jobs=(port_range[1] - port_range[0] + 1) * num_of_threads *
-                                         (len(host_name) if type(host_name) is list else 1),
+        # vLLM server handles load balancing internally, so we can use more threads
+        defense_output = Parallel(n_jobs=num_of_threads * (len(host_name) if type(host_name) is list else 1),
                                   backend='threading')(
             delayed(f)(k, v, cache_seed if ignore_num_of_rep else int(k.split('-')[-1]), frequency_penalty, presence_penalty)
             for k, v in tqdm(harmful_response))
     else:
         defense_output = []
         for k, v in tqdm(harmful_response):
-            llm_config = load_llm_config(model_name=model_name, port_range=port_range,
+            llm_config = load_llm_config(model_name=model_name, port=port,
                                          frequency_penalty=frequency_penalty, temperature=temperature,
                                          host_name=host_name, cache_seed=cache_seed if ignore_num_of_rep else int(k.split('-')[-1]),
                                          presence_penalty=presence_penalty
