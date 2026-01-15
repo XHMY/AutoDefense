@@ -1,82 +1,150 @@
-import openai
-from autogen import OpenAIWrapper
+"""
+Attack module for testing LLM responses to adversarial prompts.
+
+This script sends prompts through attack templates to a target LLM
+and collects responses for analysis.
+"""
+
+import argparse
 import json
-from tqdm import tqdm
-from defense.utility import load_llm_config, load_attack_template, load_harmful_prompt
+import os
+from functools import partial
+
+from autogen import OpenAIWrapper
 from joblib import Parallel, delayed
+from tqdm import tqdm
+
+from defense.utility import load_llm_config, load_attack_template, load_harmful_prompt
 
 
-def attack_llm_collect_response(template, prompts, llm_config_list, model=None):
-    llm = OpenAIWrapper(config_list=llm_config_list)
-    llm_backup = OpenAIWrapper(config_list=load_llm_config(model_name="gpt-3.5-turbo-1106",
-                                                           cache_seed=llm_config_list[0]["cache_seed"],
-                                                           temperature=1.0))
-    outputs = []
-    non_success_cnt = 0
-    for k, prompt in tqdm(prompts.items()):
-        try:
-            llm_raw_response = llm.create(model=model,
-                                          messages=[{'role': 'user', 'content':
-                                              template.replace("[INSERT PROMPT HERE]", prompt)}])
-            assert llm_raw_response.choices[0].finish_reason != 'content_filter'
-            content = llm_raw_response.choices[0].message.content
-        except Exception as e:
-            print("Azure API failed, using backup OpenAI model")
-            content = llm_backup.create(model=model, messages=[{'role': 'user',
-                                                                'content': template.replace("[INSERT PROMPT HERE]", prompt)}]).choices[0].message.content
-        outputs.append({"name": k, "raw_response": content.strip()})
-    return outputs, non_success_cnt
-
-
-def attack(output_prefix="attack", model_name="gpt-3.5-turbo-1106", output_suffix="", cache_seed=123,
-           port=8000, host_name="127.0.0.1", template=None, prompts=None):
+def query_single(llm: OpenAIWrapper, template: str, name: str, prompt: str, max_retries: int = 3) -> dict:
     """
-    Run attack on LLM and collect responses.
+    Query the LLM with a single prompt.
     
     Args:
-        output_prefix: Prefix for output file name
-        model_name: Name of the model to attack
-        output_suffix: Suffix for output file name
-        cache_seed: Cache seed for reproducibility
-        port: Port where vLLM server is running (default: 8000)
-        host_name: Hostname of the vLLM server
-        template: Attack template to use
-        prompts: Dictionary of prompts to attack
+        llm: OpenAIWrapper instance
+        template: Attack template with [INSERT PROMPT HERE] placeholder
+        prompt: The harmful prompt to insert
+        name: Identifier for this prompt
+        max_retries: Number of retry attempts on failure
+    
+    Returns:
+        Dict with 'name' and 'raw_response' keys
     """
-    llm_config_list = load_llm_config(model_name=model_name, cache_seed=cache_seed, temperature=1.0,
-                                      port=port, host_name=host_name, presence_penalty=0.0,
-                                      frequency_penalty=0.0)
-    outputs, non_success_cnt = attack_llm_collect_response(template, prompts, llm_config_list)
-    with open(f"data/harmful_output/{model_name}/{output_prefix}_{output_suffix}.json", "w") as f:
+    content = template.replace("[INSERT PROMPT HERE]", prompt)
+    
+    for attempt in range(max_retries):
+        try:
+            response = llm.create(
+                messages=[{"role": "user", "content": content}],
+                extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+            )
+            if response.choices[0].finish_reason == "content_filter":
+                return {"name": name, "raw_response": "[CONTENT_FILTERED]"}
+            return {"name": name, "raw_response": response.choices[0].message.content.strip()}
+        except Exception as e:
+            if attempt == max_retries - 1:
+                print(f"Failed after {max_retries} attempts for prompt '{name}': {e}")
+                return {"name": name, "raw_response": f"[ERROR: {e}]"}
+    
+    return {"name": name, "raw_response": "[ERROR: Unknown]"}
+
+
+def run_attack(
+    model_name: str,
+    template: str,
+    prompts: dict,
+    host: str = "127.0.0.1",
+    port: int = 8000,
+    n_workers: int = 8,
+    cache_seed: int = 123,
+    temperature: float = 1.0,
+) -> list[dict]:
+    """
+    Run attack on LLM with parallel prompt processing.
+    
+    Args:
+        model_name: Name of the model to attack
+        template: Attack template string
+        prompts: Dictionary of {name: prompt} pairs
+        host: vLLM server hostname
+        port: vLLM server port
+        n_workers: Number of parallel workers
+        cache_seed: Cache seed for reproducibility
+        temperature: Sampling temperature
+    
+    Returns:
+        List of response dictionaries
+    """
+    llm_config = load_llm_config(
+        model_name=model_name,
+        host_name=host,
+        port=port,
+        cache_seed=cache_seed,
+        temperature=temperature,
+    )
+    llm = OpenAIWrapper(config_list=llm_config)
+    
+    # Create partial function with fixed llm and template
+    query_fn = partial(query_single, llm, template)
+    
+    # Parallel execution at the request level
+    outputs = Parallel(n_jobs=n_workers, backend="threading")(
+        delayed(query_fn)(name, prompt)
+        for name, prompt in tqdm(prompts.items(), desc="Attacking")
+    )
+    
+    return outputs
+
+
+def save_results(outputs: list[dict], output_path: str) -> None:
+    """Save attack results to JSON file."""
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, "w") as f:
         json.dump(outputs, f, indent=4, ensure_ascii=False)
-    print("non_success_cnt:", non_success_cnt,
-          "total:", len(prompts),
-          "non-success rate:", non_success_cnt / len(prompts))
+    print(f"Saved {len(outputs)} results to {output_path}")
 
 
-if __name__ == '__main__':
-    model_name = "gpt-35-turbo-1106"
-    port = 8000  # vLLM server port
-    host_name = "127.0.0.1"
-
-    # get curated + synthetic attack output
-    # prompts_synthetic = load_harmful_prompt(json_path="data/prompt/prompts_synthetic.json")
-    # prompts = {**prompts_curated, **prompts_synthetic}
-
-    # vLLM server handles concurrent requests efficiently
-    (Parallel(n_jobs=2, backend='threading')
-     (delayed(attack)(output_prefix="attack-dan", output_suffix=f"{i}", cache_seed=i, model_name=model_name,
-                      port=port, host_name=host_name,
-                      template=load_attack_template(template_name="v1"),
-                      prompts=load_harmful_prompt(json_path="data/prompt/prompt_dan.json"))
-      for i in range(5)))
-
-    # get safe output
-    # (Parallel(n_jobs=2, backend='threading')
-    #  (delayed(attack)(output_prefix="safe", output_suffix=f"{i}", cache_seed=i, model_name=model_name,
-    #                   port=port, host_name=host_name,
-    #                   template=load_attack_template(template_name="placeholder"),
-    #                   prompts=load_harmful_prompt(json_path="data/prompt/safe_prompts.json"))
-    #   for i in range(5)))
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run adversarial attacks on LLMs")
+    parser.add_argument("--model", default="Qwen/Qwen3-1.7B", help="Model name")
+    parser.add_argument("--host", default="127.0.0.1", help="vLLM server host")
+    parser.add_argument("--port", type=int, default=8000, help="vLLM server port")
+    parser.add_argument("--workers", type=int, default=128, help="Number of parallel workers")
+    parser.add_argument("--template", default="v1", help="Attack template name")
+    parser.add_argument("--prompts", default="data/prompt/prompt_dan.json", help="Path to prompts JSON")
+    parser.add_argument("--output-prefix", default="attack-dan", help="Output file prefix")
+    parser.add_argument("--output-suffix", default="0", help="Output file suffix")
+    parser.add_argument("--cache-seed", type=int, default=123, help="Cache seed for reproducibility")
+    parser.add_argument("--temperature", type=float, default=1.0, help="Sampling temperature")
+    return parser.parse_args()
 
 
+def main():
+    args = parse_args()
+    
+    # Load template and prompts
+    template = load_attack_template(template_name=args.template)
+    prompts = load_harmful_prompt(json_path=args.prompts)
+    
+    # Run attack with parallel processing
+    outputs = run_attack(
+        model_name=args.model,
+        template=template,
+        prompts=prompts,
+        host=args.host,
+        port=args.port,
+        n_workers=args.workers,
+        cache_seed=args.cache_seed,
+        temperature=args.temperature,
+    )
+    
+    # Save results
+    # Sanitize model name for directory (replace / with -)
+    model_dir = args.model.replace("/", "-")
+    output_path = f"data/harmful_output/{model_dir}/{args.output_prefix}_{args.output_suffix}.json"
+    save_results(outputs, output_path)
+
+
+if __name__ == "__main__":
+    main()

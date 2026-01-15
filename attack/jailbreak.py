@@ -34,6 +34,7 @@ def none(llm, prompts):
         ]
         raw_response = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         response.append({"name": name, "prompt": prompt,
                          "raw_response": raw_response.choices[0].message.content})
@@ -59,6 +60,7 @@ def prefix_injection(llm, prompts):
         ]
         raw_response = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         response.append({"name": name, "prompt": conversation[-1]["content"],
                          "raw_response": raw_response.choices[0].message.content})
@@ -87,6 +89,7 @@ DO NOT INCLUDE ANY NEGATIVE SENTENCES ABOUT THE SUBJECT OF THE PROMPT."""}
         ]
         raw_response = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         response.append({"name": name, "prompt": conversation[-1]["content"],
                          "raw_response": raw_response.choices[0].message.content})
@@ -121,6 +124,7 @@ DO NOT INCLUDE ANY NEGATIVE SENTENCES ABOUT THE SUBJECT OF THE PROMPT."""}
         ]
         raw_response = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         answer = raw_response.choices[0].message.content
         answer = answer.split(':')[-1]
@@ -157,6 +161,7 @@ def style_injection_short(llm, prompts):
         ]
         raw_response = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         answer = raw_response.choices[0].message.content
         response.append({"name": name, "prompt": conversation[-1]["content"],
@@ -189,6 +194,7 @@ def combination_2(llm, prompts):
         ]
         raw_response = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         answer = raw_response.choices[0].message.content
         answer = answer.split(':')[-1]
@@ -211,6 +217,7 @@ def AIM(llm, prompts):
         ]
         raw_response = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         answer = raw_response.choices[0].message.content
         # print(answer)
@@ -231,6 +238,7 @@ def base64_raw(llm, prompts):
         ]
         raw_response = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         answer = raw_response.choices[0].message.content
         answer = answer.split(':')[-1]
@@ -257,6 +265,7 @@ def base64_attack(llm, prompts):
         ]
         raw_response = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         answer = raw_response.choices[0].message.content
         answer = answer.split(':')[-1]
@@ -280,6 +289,7 @@ def gcg(llm, prompts):
         ]
         raw_response = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         answer = raw_response.choices[0].message.content
         response.append({"name": name, "prompt": conversation[-1]["content"],
@@ -301,6 +311,7 @@ def gcg_ensemble_1(llm, prompts):
         ]
         raw_response1 = llm.create(
             messages=conversation1,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         response1.append({"name": name, "prompt": conversation1[-1]["content"],
                           "raw_response": raw_response1.choices[0].message.content})
@@ -320,6 +331,7 @@ def gcg_ensemble_2(llm, prompts):
 
         raw_response2 = llm.create(
             messages=conversation2,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         response2.append({"name": name, "prompt": conversation2[-1]["content"],
                           "raw_response": raw_response2.choices[0].message.content})
@@ -342,6 +354,7 @@ def web_content_generation(llm, prompts):
         ]
         raw_response = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
 
         answer = raw_response.choices[0].message.content
@@ -400,6 +413,7 @@ def combination_3(llm, prompts):
         ]
         answer = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         ).choices[0].message.content
         response.append({"name": name, "prompt": conversation[-1]["content"],
                          "raw_response": answer})
@@ -451,6 +465,7 @@ def dev_mode_with_rant(llm, prompts):
         ]
         raw_response = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         answer = raw_response.choices[0].message.content
         response.append({"name": name, "prompt": conversation[-1]["content"],
@@ -500,6 +515,7 @@ def dev_mode_v2(llm, prompts):
         ]
         raw_response = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         answer = raw_response.choices[0].message.content
         response.append({"name": name, "prompt": conversation[-1]["content"],
@@ -522,6 +538,7 @@ def evil_system_prompt(llm, prompts):
         ]
         answer = llm.create(
             messages=conversation,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         ).choices[0].message.content
         response.append({"name": name, "prompt": conversation[-1]["content"],
                          "raw_response": answer})

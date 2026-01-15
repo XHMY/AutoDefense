@@ -29,7 +29,9 @@ class VanillaJailbreakDetector:
         ]
 
         try:
-            llm_output = self.llm.create(messages=messages).choices[0].message.content
+            llm_output = self.llm.create(messages=messages,
+                extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+                ).choices[0].message.content
         except openai.BadRequestError as e:
             llm_output = "INVALID"
 
