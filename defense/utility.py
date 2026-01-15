@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import re
 from typing import Optional
 
 # import g4f
@@ -73,7 +74,12 @@ def load_llm_config(json_path="data/config/llm_config_list.json", model_name="gp
     resolved_api_key = api_key or os.getenv("OPENAI_API_KEY")
     resolved_base_url = base_url or os.getenv("OPENAI_BASE_URL")
     model_lower = (model_name or "").lower()
-    looks_like_openai = model_lower.startswith(("gpt", "o", "chatgpt"))
+    # Match OpenAI models: gpt-*, chatgpt-*, and reasoning models like o1, o3-mini
+    # The "o" prefix requires a digit after it to avoid matching orca, openhermes, etc.
+    looks_like_openai = (
+        model_lower.startswith(("gpt", "chatgpt"))
+        or re.match(r"^o\d", model_lower) is not None
+    )
 
     if (resolved_api_key and looks_like_openai) or resolved_base_url:
         cfg = {
