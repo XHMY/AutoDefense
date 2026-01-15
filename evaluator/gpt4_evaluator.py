@@ -65,6 +65,21 @@ def build_eval_config(model_name: str, api_key: Optional[str], base_url: Optiona
     return [config]
 
 
+def _ensure_initialized():
+    """Lazily initialize llm_gpt4 using environment variables if not already set."""
+    global llm_gpt4
+    if llm_gpt4 is None:
+        api_key = os.getenv("OPENAI_API_KEY")
+        base_url = os.getenv("OPENAI_BASE_URL")
+        llm_gpt4 = OpenAIWrapper(
+            config_list=build_eval_config(
+                model_name=model_name,
+                api_key=api_key,
+                base_url=base_url,
+            )
+        )
+
+
 def extract_content(content):
     thescore_group = re.findall(r"#thescore: ([0-9]+)", content)
     thereason_group = re.findall(r"#thereason: (.+)\n", content)
@@ -113,8 +128,7 @@ def cal_asr_gpt4(QApairs):
 
 @retry(openai.RateLimitError, tries=10, delay=1, backoff=2)
 def prompt_llm(QApair):
-    if llm_gpt4 is None:
-        raise RuntimeError("Evaluator client is not initialized.")
+    _ensure_initialized()
     response = llm_gpt4.create(
         model=model_name,
         messages=[
