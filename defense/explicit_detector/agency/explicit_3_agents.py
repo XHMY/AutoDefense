@@ -193,16 +193,9 @@ class AutoGenDetectorThreeAgencyV2(AutoGenDetectorThreeAgency):
 
 
 if __name__ == "__main__":
-    # args = argparse.ArgumentParser()
-    # args.add_argument("--log_file", type=str, default="data/defense_output/detection_summary_three_agents.json")
-    # args = args.parse_args()
-    #
-    # evaluate_explicit_detector(AutoGenDetectorThreeAgency(), log_file=args.log_file)
-
-    # evaluate_defense_with_response(task_agency=AutoGenDetectorThreeAgencyV2,
-    #                                defense_agency=ExplicitMultiAgentDefense,
-    #                                model_name="gpt-3.5-turbo-1106",
-    #                                defense_output_name="/tmp/ex-3.json")
+    # Example: Evaluate defense with vLLM server
+    # Start vLLM server first:
+    #   vllm serve meta-llama/Llama-2-13b-chat-hf --port 8000
 
     evaluate_defense_with_response(task_agency=AutoGenDetectorThreeAgency,
                                    defense_agency=ExplicitMultiAgentDefense,
@@ -210,5 +203,6 @@ if __name__ == "__main__":
                                    chat_file="data/harmful_output/alpaca_data_safe_1000.json",
                                    defense_output_name="/tmp/ex-3.json",
                                    parallel=False,
-                                   host_name="dgx2-5",
+                                   host_name="127.0.0.1",
+                                   port=8000,
                                    frequency_penalty=0.0)

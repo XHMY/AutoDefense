@@ -53,6 +53,7 @@ def prompt_llm(conversation, llm, model):
     raw_response = llm.create(
         model=model,
         messages=conversation,
+        extra_body={"chat_template_kwargs": {"enable_thinking": False}},
     )
     return raw_response
 

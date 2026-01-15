@@ -258,24 +258,10 @@ class Detector4AgencyLlamaGuard:
 
 
 if __name__ == "__main__":
-    # args = argparse.ArgumentParser()
-    # args.add_argument("--log_file", type=str, default="data/defense_output/detection_summary_three_agents.json")
-    # args = args.parse_args()
-    #
-    # evaluate_explicit_detector(AutoGenDetectorThreeAgency(), log_file=args.log_file)
+    # Example: Evaluate defense with vLLM server
+    # Start vLLM server first:
+    #   vllm serve meta-llama/Llama-2-7b-chat-hf --port 8000 --data-parallel-size 4
 
-    # evaluate_defense_with_response(task_agency=Detector4AgencyLlamaGuard,
-    #                                defense_agency=ExplicitMultiAgentDefense,
-    #                                model_name="llama-2-13b",
-    #                                host_name="cn-s-4",
-    #                                port_range=(9006, 9006),
-    #                                chat_file="data/harmful_output/test.json",
-    #                                defense_output_name="data/defense_output/tmp.json",
-    #                                frequency_penalty=0)
-
-    # if os.path.exists(output_file):
-    #     print("Skip existing file")
-    #     continue
     for model_name in ["llama-2-7b"]:
         # "llama-2-7b", "mistral-7b-v0.2", "llama-2-13b", "vicuna-13b-v1.5", "vicuna-7b-v1.5", "vicuna-33b"
         output_file = f"data/defense_output/open-llm-defense-safe_fp0-alpaca/{model_name}/ex-4.json"
@@ -283,8 +269,8 @@ if __name__ == "__main__":
         evaluate_defense_with_response(task_agency=Detector4AgencyLlamaGuard,
                                        defense_agency=ExplicitMultiAgentDefense,
                                        model_name=model_name,
-                                       host_name="dgx2-5",
-                                       port_range=(9005, 9008),
+                                       host_name="127.0.0.1",
+                                       port=8000,
                                        parallel=True,
                                        chat_file="data/harmful_output/alpaca_data_safe_1000.json",
                                        frequency_penalty=0.0,
@@ -298,8 +284,8 @@ if __name__ == "__main__":
         evaluate_defense_with_response(task_agency=Detector4AgencyLlamaGuard,
                                        defense_agency=ExplicitMultiAgentDefense,
                                        model_name=model_name,
-                                       host_name="dgx2-5",
-                                       port_range=(9005, 9008),
+                                       host_name="127.0.0.1",
+                                       port=8000,
                                        parallel=True,
                                        chat_file="data/harmful_output/gpt-35-turbo-1106/attack-dan*.json",
                                        frequency_penalty=0.0,
