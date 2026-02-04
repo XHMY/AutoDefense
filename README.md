@@ -1,3 +1,35 @@
+
+<div align="right">
+  <details>
+    <summary >🌐 Language</summary>
+    <div>
+      <div align="center">
+        <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=en">English</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=zh-CN">简体中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=zh-TW">繁體中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=ja">日本語</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=ko">한국어</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=hi">हिन्दी</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=th">ไทย</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=fr">Français</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=de">Deutsch</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=es">Español</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=it">Italiano</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=ru">Русский</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=pt">Português</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=nl">Nederlands</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=pl">Polski</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=ar">العربية</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=fa">فارسی</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=tr">Türkçe</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=vi">Tiếng Việt</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=id">Bahasa Indonesia</a>
+        | <a href="https://openaitx.github.io/view.html?user=XHMY&project=AutoDefense&lang=as">অসমীয়া</
+      </div>
+    </div>
+  </details>
+</div>
+
 # AutoDefense: Multi-Agent LLM Defense against Jailbreak Attacks
 
 [**Blog**](https://microsoft.github.io/autogen/0.2/blog/2024/03/11/AutoDefense/Defending%20LLMs%20Against%20Jailbreak%20Attacks%20with%20AutoDefense/)
