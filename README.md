@@ -1,3 +1,5 @@
+
+
 # AutoDefense: Multi-Agent LLM Defense against Jailbreak Attacks
 
 [**Blog**](https://microsoft.github.io/autogen/0.2/blog/2024/03/11/AutoDefense/Defending%20LLMs%20Against%20Jailbreak%20Attacks%20with%20AutoDefense/)
@@ -5,7 +7,7 @@
 ## Installation
 
 ```bash
-pip install vllm autogen pandas retry openai
+pip install vllm autogen pandas retry openai joblib
 ```
 
 ## Prepare Inference Service Using [vLLM](https://docs.vllm.ai/)
